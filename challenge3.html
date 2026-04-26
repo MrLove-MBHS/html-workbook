@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Challenge 3: Navigation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; }
+        header {
+            background: #ff9800; color: #fff; padding: 20px 0; text-align: center;
+        }
+        #challengeArea {
+            background: #fff;
+            max-width: 700px;
+            margin: 30px auto 15px auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            gap: 28px;
+        }
+        aside {
+            width: 140px;
+            background: #eee;
+            padding: 10px;
+            border-radius: 8px;
+            min-height: 330px;
+            height: 100%;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        ul li {
+            margin-bottom: 6px;
+            padding: 4px 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        ul li.selected-file {
+            background: #ffd580;
+            color: #6f3400;
+            font-weight: bold;
+        }
+        section {
+            flex: 1;
+            padding: 0;
+        }
+        .editor-output-wrapper {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 10px;
+        }
+        #codeInput {
+            width: 50%;
+            min-width: 120px;
+            height: 200px;
+            font-family: monospace;
+            font-size: 15px;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            resize: vertical;
+        }
+        #outputWindow {
+            width: 50%;
+            min-width: 120px;
+            height: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+        }
+        #runButton, #screenshotButton {
+            display: inline-block;
+            margin: 10px 8px 8px 0;
+            padding: 10px 28px;
+            background-color: #ff9800;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #screenshotButton {
+            background-color: #3288d9;
+            display: none;
+        }
+        #feedback {
+            background: #fff;
+            border-radius: 8px;
+            margin: 8px 0 0 0;
+            padding: 9px 18px;
+            color: #900;
+            font-size: 15px;
+        }
+        #feedback.valid { color: #2c8e35; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+<header>
+    <h1>Challenge 3: Navigation</h1>
+</header>
+<div id="challengeArea">
+    <h2>Menu Page Links &amp; Back to Home</h2>
+    <ul>
+        <li><b>index.html:</b> Add anchor links to <b>hamburgers.html</b>, <b>chips.html</b>, and <b>drinks.html</b> (e.g. <code>&lt;a href="hamburgers.html"&gt;Hamburgers&lt;/a&gt;</code>).</li>
+        <li><b>hamburgers.html, chips.html, drinks.html:</b> Add only <code>&lt;a href="index.html"&gt;Back to Home&lt;/a&gt;</code> at the end.</li>
+        <li>Click <b>Run</b> to check your work. Screenshot evidence once validation passes.</li>
+    </ul>
+</div>
+<div class="container">
+    <aside>
+        <b>Files</b>
+        <ul id="fileList"></ul>
+    </aside>
+    <section>
+        <div class="editor-output-wrapper">
+            <textarea id="codeInput"
+                placeholder="Write code for selected page here..."></textarea>
+            <iframe id="outputWindow"></iframe>
+        </div>
+        <button id="runButton">Run</button>
+        <button id="screenshotButton">Screenshot & Download Evidence</button>
+        <div id="feedback"></div>
+    </section>
+</div>
+<script>
+    // --- File list ---
+    const files = {
+        "index.html": '<h1>Home</h1>\n<p>This is my home page</p>',
+        "hamburgers.html": '<h1>Hamburgers</h1>\n<p>This is my hamburgers page</p>',
+        "chips.html": '<h1>Chips</h1>\n<p>This is my chips page</p>',
+        "drinks.html": '<h1>Drinks</h1>\n<p>This is my drinks page</p>'
+    };
+    const requiredPages = ["index.html", "hamburgers.html", "chips.html", "drinks.html"];
+    const pageLabels = {
+        "index.html": "Home",
+        "hamburgers.html": "Hamburgers",
+        "chips.html": "Chips",
+        "drinks.html": "Drinks"
+    };
+
+    const fileList = document.getElementById('fileList');
+    const codeInput = document.getElementById('codeInput');
+    const outputWindow = document.getElementById('outputWindow');
+    const runButton = document.getElementById('runButton');
+    const screenshotButton = document.getElementById('screenshotButton');
+    const feedback = document.getElementById('feedback');
+    let currentFile = "index.html";
+
+    function refreshFileList() {
+        fileList.innerHTML = '';
+        requiredPages.forEach(fname => {
+            const li = document.createElement('li');
+            li.textContent = fname;
+            li.addEventListener('click', function() {
+                saveCurrentFile();
+                selectFile(fname, li);
+            });
+            fileList.appendChild(li);
+        });
+        selectFile("index.html", fileList.children[0]);
+    }
+
+    function selectFile(fname, listItem) {
+        currentFile = fname;
+        for (const item of fileList.children) {
+            item.classList.remove('selected-file');
+        }
+        if (listItem) listItem.classList.add('selected-file');
+        codeInput.value = files[fname] || '';
+        codeInput.placeholder = `Write code for ${fname} here...`;
+        feedback.className = '';
+        feedback.innerHTML = '';
+        screenshotButton.style.display = "none";
+        outputWindow.srcdoc = '';
+    }
+
+    function saveCurrentFile() {
+        if (currentFile && codeInput.value !== undefined) {
+            files[currentFile] = codeInput.value;
+        }
+    }
+
+    refreshFileList();
+
+    function validateNavigationPage(fname, code) {
+        let valid = true;
+        const feedbacks = [];
+        // Heading check
+        const headingRx = new RegExp(`<h1>\\s*${pageLabels[fname]}\\s*</h1>`, "i");
+        if (!headingRx.test(code)) {
+            feedbacks.push("Missing heading");
+            valid = false;
+        }
+        // Paragraph check
+        const correctParagraph = `This is my ${pageLabels[fname].toLowerCase()} page`;
+        const parRx = new RegExp(`<p>\\s*${correctParagraph}\\s*</p>`, "i");
+        if (!parRx.test(code)) {
+            feedbacks.push("Missing paragraph");
+            valid = false;
+        }
+        if (fname === "index.html") {
+            // Links to other pages
+            ["hamburgers.html","chips.html","drinks.html"].forEach(pg=>{
+                const pageLabel = pageLabels[pg];
+                if (!new RegExp(`<a\\s[^>]*href=["']${pg}["'][^>]*>\\s*${pageLabel}\\s*</a>`, "i").test(code)) {
+                    feedbacks.push(`Missing ${pageLabel} link`);
+                    valid = false;
+                }
+            });
+        } else {
+            // Needs "Back to Home" anchor, pointing to index.html
+            if (!/<a\s[^>]*href=["']index\.html["'][^>]*>Back to Home<\/a>/i.test(code)) {
+                feedbacks.push("Missing Back to Home anchor");
+                valid = false;
+            }
+        }
+        return {valid, feedbacks};
+    }
+
+    runButton.addEventListener('click', function () {
+        saveCurrentFile();
+        const code = codeInput.value;
+        const result = validateNavigationPage(currentFile, code);
+
+        if (!result.valid) {
+            codeInput.classList.add('invalid');
+            outputWindow.srcdoc = '';
+            feedback.className = '';
+            feedback.innerHTML = result.feedbacks.map(s => `<div>${s}</div>`).join('');
+            screenshotButton.style.display = "none";
+            return;
+        } else {
+            codeInput.classList.remove('invalid');
+            feedback.className = 'valid';
+            feedback.innerHTML = '<b>Great job! Page is complete.</b>';
+            screenshotButton.style.display = "inline-block";
+        }
+        outputWindow.srcdoc = code;
+        setTimeout(interceptLinksInPreview, 120);
+    });
+
+    codeInput.addEventListener('input', function () {
+        saveCurrentFile();
+        feedback.innerHTML = '';
+        screenshotButton.style.display = "none";
+        outputWindow.srcdoc = '';
+    });
+
+    screenshotButton.addEventListener('click', function () {
+        const section = document.querySelector("section");
+        const wrapper = section.cloneNode(true);
+        const origIframe = wrapper.querySelector("iframe");
+        const code = codeInput.value;
+        let rendered = document.createElement("div");
+        rendered.innerHTML = code;
+        rendered.style.background = "#fff";
+        rendered.style.height = origIframe.style.height || "200px";
+        rendered.style.border = "1px solid #ccc";
+        rendered.style.borderRadius = "4px";
+        rendered.style.padding = "8px";
+        rendered.style.overflow = "auto";
+        origIframe.parentNode.replaceChild(rendered, origIframe);
+        wrapper.querySelector("#screenshotButton").remove();
+
+        const tempDiv = document.createElement("div");
+        tempDiv.style.position = "fixed";
+        tempDiv.style.left = "-9999px";
+        tempDiv.appendChild(wrapper);
+        document.body.appendChild(tempDiv);
+
+        html2canvas(wrapper, {backgroundColor: '#f9f9f9'}).then(canvas => {
+            document.body.removeChild(tempDiv);
+            const link = document.createElement('a');
+            link.download = `${currentFile.replace('.html','')}_navigation_evidence.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    });
+
+    // --- Intercept anchor clicks in preview and swap page instead of navigating ---
+    function interceptLinksInPreview() {
+        const doc = outputWindow.contentDocument || outputWindow.contentWindow.document;
+        if (!doc) return;
+        const links = doc.querySelectorAll('a[href]');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = link.getAttribute('href');
+                if (requiredPages.includes(href)) {
+                    e.preventDefault();
+                    const idx = requiredPages.indexOf(href);
+                    if (idx !== -1 && fileList.children[idx]) {
+                        fileList.children[idx].click();
+                        runButton.click();
+                    }
+                }
+            });
+        });
+    }
+</script>
+</body>
+</html>

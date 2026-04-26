@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JL's HTML Playground</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to Mr Love's HTML Playground</h1>
+        <button id="resetButton">Reset Playground</button>
+    </header>
+    <button id="toggleSidebar" aria-label="Toggle File Sidebar">☰ Files</button>
+    <div class="container">
+        <aside>
+            <h2>Files</h2>
+            <input type="text" id="fileName" placeholder="Enter file name">
+            <button id="createFileButton">Create File</button>
+            <ul id="fileList"></ul>
+            <h2>Images</h2>
+            <input type="file" id="imageInput" accept="image/*">
+            <button id="addImageButton">Add Image</button>
+            <ul id="imageList"></ul>
+        </aside>
+        <section>
+            <h2>Editor</h2>
+            <div class="editor-output-wrapper">
+                <textarea id="codeInput" placeholder="Write your HTML, CSS, and JS here..."></textarea>
+                <iframe id="outputWindow"></iframe>
+            </div>
+            <button id="runButton">Run</button>
+        </section>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>

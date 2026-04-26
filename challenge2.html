@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Challenge 2: Tables</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f9f9f9;
+            padding: 30px 0 0 0;
+        }
+        header {
+            background-color: #2a87d9;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        #challengeArea {
+            background: #fff;
+            max-width: 650px;
+            margin: 30px auto 15px auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        #main-challenge-content {
+            max-width: 650px;
+            margin: 0 auto;
+        }
+        .editor-output-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+        #codeInput {
+            width: 50%;
+            height: 220px;
+            font-family: monospace;
+            font-size: 15px;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            resize: vertical;
+        }
+        #outputWindow {
+            width: 50%;
+            height: 220px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+        }
+        #runButton, #screenshotButton {
+            display: block;
+            margin: 16px auto 8px auto;
+            padding: 10px 28px;
+            background-color: #2a87d9;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #screenshotButton {
+            background-color: #4CAF50;
+            display: none;
+        }
+        textarea:disabled {
+            background-color: #eee;
+            color: #bbb;
+            cursor: not-allowed;
+        }
+        .invalid {
+            background-color: #ffe0e0 !important;
+        }
+        #feedback {
+            background: #fff;
+            border-radius: 8px;
+            margin: 15px 0 0 0;
+            padding: 10px 20px;
+            color: #900;
+            font-size: 15px;
+        }
+        #feedback.valid {
+            color: #2c8e35;
+        }
+        table.example-table {
+            border-collapse: collapse; margin-top: 12px;
+        }
+        table.example-table td {
+            border: 1px solid #bbb;
+            padding: 4px 12px;
+        }
+        table.example-table tr:first-child td {
+            font-weight: bold;
+            background: #e8e8e8;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Challenge 2: Tables</h1>
+    </header>
+    <div id="challengeArea">
+        <h2>Write a Table for Yourself and 3 Friends</h2>
+        <ul>
+            <li>Use only <code>&lt;table&gt;</code>, <code>&lt;tr&gt;</code>, and <code>&lt;td&gt;</code> tags.</li>
+            <li>The table must have headings: Name, Age, Hair Colour (these go in the first row).</li>
+            <li>List yourself and three friends (made-up info is OK).</li>
+            <li>No other tags are allowed.</li>
+        </ul>
+        <p>Here is an example (do not copy, use your own info):</p>
+        <table class="example-table">
+            <tr>
+                <td>Name</td>
+                <td>Age</td>
+                <td>Hair Colour</td>
+            </tr>
+            <tr>
+                <td>Sam</td>
+                <td>14</td>
+                <td>Brown</td>
+            </tr>
+            <tr>
+                <td>Jess</td>
+                <td>14</td>
+                <td>Blonde</td>
+            </tr>
+            <tr>
+                <td>Alex</td>
+                <td>15</td>
+                <td>Black</td>
+            </tr>
+            <tr>
+                <td>Mia</td>
+                <td>13</td>
+                <td>Red</td>
+            </tr>
+        </table>
+    </div>
+    <div id="main-challenge-content">
+        <div class="editor-output-wrapper">
+            <textarea id="codeInput"
+                placeholder="Write your code for Challenge 2 here..."></textarea>
+            <iframe id="outputWindow"></iframe>
+        </div>
+        <button id="runButton">Run</button>
+        <button id="screenshotButton">Screenshot & Download Evidence</button>
+        <div id="feedback"></div>
+    </div>
+    <script>
+        const codeInput = document.getElementById('codeInput');
+        const outputWindow = document.getElementById('outputWindow');
+        const runButton = document.getElementById('runButton');
+        const feedback = document.getElementById('feedback');
+        const screenshotButton = document.getElementById('screenshotButton');
+        const mainChallengeContent = document.getElementById('main-challenge-content');
+        const allowedTags = ['table', 'tr', 'td'];
+
+        function getTagsFromInput(input) {
+            if (!input.trim()) return [];
+            let doc;
+            try {
+                doc = new DOMParser().parseFromString(input, 'text/html');
+            } catch (e) {
+                return [];
+            }
+            if (!doc.body) return [];
+            return Array.from(doc.body.querySelectorAll('*')).map(el => el.tagName.toLowerCase());
+        }
+
+        function checkTagUsageAndClosure(input) {
+            const feedbackList = [];
+            let valid = true;
+
+            // Check for tag usage
+            allowedTags.forEach(tag => {
+                const openRegex = new RegExp(`<${tag}\\b`, 'i');
+                const closeRegex = new RegExp(`</${tag}>`, 'i');
+                if (!openRegex.test(input)) {
+                    feedbackList.push(`Missing <code>&lt;${tag}&gt;</code> opening tag.`);
+                    valid = false;
+                }
+                if (!closeRegex.test(input)) {
+                    feedbackList.push(`Missing <code>&lt;/${tag}&gt;</code> closing tag.`);
+                    valid = false;
+                }
+            });
+
+            // Check for only allowed tags
+            const allHtmlTagRegex = /<\s*([a-zA-Z0-9]+)[^>]*>/g;
+            let match, foundTags = new Set();
+            while ((match = allHtmlTagRegex.exec(input)) !== null) {
+                foundTags.add(match[1].toLowerCase());
+            }
+            foundTags.forEach(tag => {
+                if (!allowedTags.includes(tag)) {
+                    feedbackList.push(`Tag <code>&lt;${tag}&gt;</code> is not allowed.`);
+                    valid = false;
+                }
+            });
+
+            // Check headings (first row)
+            const headingRowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/i;
+            const headingRowMatch = headingRowRegex.exec(input);
+            if (!headingRowMatch) {
+                feedbackList.push("Missing table headings row (first row).");
+                valid = false;
+            } else {
+                const headingTds = (headingRowMatch[1].match(/<td[\s\S]*?<\/td>/gi) || []);
+                const headings = headingTds.map(td =>
+                    td.replace(/<td[^>]*>|<\/td>/gi, '').trim().toLowerCase()
+                );
+                const requiredHeadings = ['name', 'age', 'hair colour'];
+                requiredHeadings.forEach(h => {
+                    if (!headings.includes(h)) {
+                        feedbackList.push(`Missing heading <b>${h}</b> in first row.`);
+                        valid = false;
+                    }
+                });
+            }
+
+            // Check 4 total <tr> rows (headings + 3 friends)
+            const trMatches = input.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+            if (trMatches.length < 4) {
+                feedbackList.push(`Expected at least 4 rows (<code>&lt;tr&gt;</code>): 1 headings + 3 people.`);
+                valid = false;
+            }
+
+            return {valid, feedback: feedbackList};
+        }
+
+        function showScreenshotButton(show) {
+            screenshotButton.style.display = show ? 'block' : 'none';
+        }
+
+        runButton.addEventListener('click', function () {
+            const code = codeInput.value;
+            const validation = checkTagUsageAndClosure(code);
+
+            if (!validation.valid) {
+                codeInput.classList.add('invalid');
+                outputWindow.srcdoc = '';
+                feedback.className = '';
+                feedback.innerHTML = validation.feedback.map(line => `<div>${line}</div>`).join('');
+                showScreenshotButton(false);
+                return;
+            } else {
+                codeInput.classList.remove('invalid');
+                feedback.className = 'valid';
+                feedback.innerHTML = '<b>Great job! Table is correct and complete.</b>';
+                showScreenshotButton(true);
+            }
+            outputWindow.srcdoc = code;
+        });
+
+        codeInput.addEventListener('input', function () {
+            const code = codeInput.value;
+            const validation = checkTagUsageAndClosure(code);
+
+            if (!validation.valid) {
+                codeInput.classList.add('invalid');
+                feedback.className = '';
+                feedback.innerHTML = validation.feedback.map(line => `<div>${line}</div>`).join('');
+                showScreenshotButton(false);
+            } else {
+                codeInput.classList.remove('invalid');
+                feedback.className = 'valid';
+                feedback.innerHTML = '';
+                showScreenshotButton(false);
+            }
+        });
+
+        screenshotButton.addEventListener('click', function () {
+            // As in previous challenge: replace iframe with rendered table content
+            const wrapper = mainChallengeContent.cloneNode(true);
+            const origIframe = wrapper.querySelector("iframe");
+            const code = document.getElementById("codeInput").value;
+            const validation = checkTagUsageAndClosure(code);
+            let rendered = document.createElement("div");
+            rendered.innerHTML = (validation.valid ? code : "<i>Invalid tags - output unavailable</i>");
+            rendered.style.background = "#fff";
+            rendered.style.height = origIframe.style.height || "220px";
+            rendered.style.border = "1px solid #ccc";
+            rendered.style.borderRadius = "4px";
+            rendered.style.padding = "8px";
+            rendered.style.overflow = "auto";
+            origIframe.parentNode.replaceChild(rendered, origIframe);
+            wrapper.querySelector("#screenshotButton").remove();
+
+            const tempDiv = document.createElement("div");
+            tempDiv.style.position = "fixed";
+            tempDiv.style.left = "-9999px";
+            tempDiv.appendChild(wrapper);
+            document.body.appendChild(tempDiv);
+
+            html2canvas(wrapper, {backgroundColor: '#f9f9f9'}).then(canvas => {
+                document.body.removeChild(tempDiv);
+                const link = document.createElement('a');
+                link.download = 'challenge2_evidence.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        });
+
+        showScreenshotButton(false);
+    </script>
+</body>
+</html>
